@@ -2,6 +2,21 @@ name: extended_tooltip
 description: "Extended tooltip package."
 version: 0.0.1
 homepage: https://github.com/rodolfogoulart/flutter_utils/tree/master/extended_tooltip
+repository: https://github.com/rodolfogoulart/flutter_utils
+issue_tracker: https://github.com/rodolfogoulart/flutter_utils/issues
+
+
+platforms:
+  android:
+  windows:
+  linux:
+  web:
+  macos:
+  ios:
+
+topics:
+  - tooltip
+  - widget
 
 environment:
   sdk: '>=3.3.1 <4.0.0'

@@ -55,3 +55,8 @@ ExtendedToolTip(
   ),
 )
 ```
+## Tested on
+ * windows
+ * web
+
+Need to test on other plataforms
