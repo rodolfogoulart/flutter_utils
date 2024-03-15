@@ -32,8 +32,19 @@ class ExtendedToolTip extends StatefulWidget {
   ///default [true]
   final bool keepTooltipWhenMouseHover;
 
-  ///default [BoxDecoration] Theme.of(context).tooltipTheme.decoration,
+  ///default [BoxDecoration]:
+  ///```dart
+  ///Theme.of(context).tooltipTheme.decoration
+  ///```
   final BoxDecoration? decoration;
+
+  ///TextStyle for Material tooltip
+  ///
+  ///default value:
+  ///```dart
+  ///Theme.of(context).tooltipTheme.textStyle
+  ///```
+  final TextStyle? textStyle;
 
   const ExtendedToolTip({
     super.key,
@@ -43,6 +54,7 @@ class ExtendedToolTip extends StatefulWidget {
     this.animation = const Duration(milliseconds: 200),
     this.keepTooltipWhenMouseHover = true,
     this.decoration,
+    this.textStyle,
   });
 
   @override
@@ -125,7 +137,8 @@ class _ExtendedToolTipState extends State<ExtendedToolTip> {
             child: Container(
               decoration: widget.decoration ?? theme.tooltipTheme.decoration,
               child: Material(
-                textStyle: theme.tooltipTheme.textStyle,
+                textStyle: widget.textStyle ?? theme.tooltipTheme.textStyle,
+                color: Colors.transparent,
                 child: WidgetSize(
                     onChange: (value) {
                       overlaySize.value = value;

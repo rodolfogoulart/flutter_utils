@@ -1,6 +1,11 @@
-## 0.0.1
-
-* Initial release
+## 0.0.3
+* Set Material Color for background transparent to not interfere with the widget
 
 ## 0.0.2
 * Fix informations on release
+
+## 0.0.1
+* Initial release
+
+
+

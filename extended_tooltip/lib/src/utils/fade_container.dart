@@ -9,7 +9,8 @@ class FadeContainer extends StatefulWidget {
   State<FadeContainer> createState() => _FadeContainerState();
 }
 
-class _FadeContainerState extends State<FadeContainer> with SingleTickerProviderStateMixin {
+class _FadeContainerState extends State<FadeContainer>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   @override
