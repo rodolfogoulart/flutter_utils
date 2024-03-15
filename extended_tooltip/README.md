@@ -1,3 +1,5 @@
+[![Pub](https://img.shields.io/pub/v/extended_tooltip.svg)](https://pub.dev/packages/extended_tooltip)
+
 This package extends Tooltip option, giving the option to pass a Widget as tooltip.
 
 This package uses Overlay to build the tooltip.
