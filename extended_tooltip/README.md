@@ -8,6 +8,7 @@ Dart Tooltip normally only accepts String or TextSpan, with this package you can
 
 The tooltip position is calculated by checking the widget size and position relative to the screen.
 
+![Example](../assets/extended_tooltip_example.gif)
 
 ## Usage
 
