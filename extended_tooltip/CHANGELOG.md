@@ -1,3 +1,6 @@
+## 0.0.4
+* Add gif example, fix example code on readme
+
 ## 0.0.3
 * Set Material Color for background transparent to not interfere with the widget
 

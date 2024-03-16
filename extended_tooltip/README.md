@@ -16,34 +16,34 @@ go to `/example` folder to more examples
 
 ```dart
 ExtendedToolTip(
-  overlayHorizontalPosition: OverlayHorizontalPosition.right,
+  horizontalPosition: ExtendedTooltipPosition.left,
   message: Container(
-      width: 200,
-      height: 200,
+    width: 200,
+    height: 200,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(10),
       color: Colors.red,
-      child: const Center(child: Text('My custom Message')),  
+    ),
+    child: const Center(child: Text('My custom Message')),
   ),
   child: Text(
     'ExtendToolTip Example',
     style: Theme.of(context).textTheme.headlineMedium,
-  ),
-)
+            ),
 ```
 
 ```dart
 ExtendedToolTip(
-  overlayHorizontalPosition: OverlayHorizontalPosition.right,
-  message: Container(
-      width: 200,
-      height: 200,
-      color: Colors.red,
-      child: const Center(child: Text('My custom Message')),  
+  message: IconButton(
+    onPressed: () {
+      setState(() {
+        value++;
+      });
+    },
+    icon: const Icon(Icons.add),
   ),
-  child: Text(
-    'ExtendToolTip Example',
-    style: Theme.of(context).textTheme.headlineMedium,
-  ),
-)
+  child: Text('tooltip interaction $value'),
+),
 ```
 ## Tested on
  * windows

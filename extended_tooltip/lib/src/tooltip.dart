@@ -112,7 +112,8 @@ class _ExtendedToolTipState extends State<ExtendedToolTip> {
             //set the position
             if (widget.horizontalPosition == ExtendedTooltipPosition.left) {
               offSetPosition = offSetPosition.copyWith(dx: -(value.width));
-            } else if (widget.horizontalPosition == ExtendedTooltipPosition.center) {
+            } else if (widget.horizontalPosition ==
+                ExtendedTooltipPosition.center) {
               offSetPosition = offSetPosition.copyWith(dx: (value.width) / -2);
             }
             //
