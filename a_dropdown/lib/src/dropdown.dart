@@ -58,7 +58,7 @@ class ADropDown<T> extends StatefulWidget {
   final ControllerADropDown controller;
 
   /// builder of the menu items
-  final Widget Function(BuildContext context, List<ADropDownItem> items) menuItemBuilder;
+  final Widget Function(BuildContext context, List<ADropDownItem<T>> items) menuItemBuilder;
 
   final Widget Function(BuildContext context, Widget child)? menuBackgroundBuilder;
 
@@ -109,7 +109,8 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
                   context,
                   Container(
                     constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
-                    child: widget.menuItemBuilder.call(context, widget.controller.itens.value),
+                    child: widget.menuItemBuilder
+                        .call(context, widget.controller.itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList()),
                   ),
                 )
               : FadeContainer(
@@ -118,7 +119,7 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
                     constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
                     child: widget.menuItemBuilder.call(
                       context,
-                      widget.controller.itens.value,
+                      widget.controller.itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList(),
                     ),
                   ),
                 );
