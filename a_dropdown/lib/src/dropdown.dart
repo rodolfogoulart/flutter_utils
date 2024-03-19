@@ -37,6 +37,10 @@ class ControllerADropDown<T> {
   removeItem(ADropDownItem<T> value) {
     itens.remove(value);
   }
+
+  void clear() {
+    itens.clear();
+  }
 }
 
 //https://medium.com/snapp-x/creating-custom-dropdowns-with-overlayportal-in-flutter-4f09b217cfce
