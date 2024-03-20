@@ -1,6 +1,6 @@
 import 'package:a_dropdown/src/button.dart';
 import 'package:a_dropdown/src/utils/fade_container.dart';
-import 'package:a_dropdown/src/value_notifier_list.dart';
+import 'package:a_dropdown/src/utils/value_notifier_list.dart';
 import 'package:flutter/material.dart';
 
 const kDurationAnimation = Duration(milliseconds: 300);
@@ -66,7 +66,15 @@ class ControllerADropDown<T> {
 
   void hideMenu() {
     isShowing = false;
-    _overlayController.hide();
+    try {
+      _overlayController.hide();
+    } catch (e) {
+      debugPrint('error to hide menu\n$e');
+    }
+  }
+
+  void dispose() {
+    hideMenu();
   }
 }
 
@@ -124,7 +132,11 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
 
   @override
   void dispose() {
-    widget.controller.hideMenu();
+    try {
+      widget.controller.dispose();
+    } catch (e) {
+      debugPrint('error to dispose ControllerADropDown \n$e');
+    }
     super.dispose();
   }
 
