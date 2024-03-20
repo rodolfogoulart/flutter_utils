@@ -69,7 +69,7 @@ class ControllerADropDown<T> {
     try {
       _overlayController.hide();
     } catch (e) {
-      debugPrint('error to hide menu\n$e');
+      // debugPrint('error to hide menu\n$e');
     }
   }
 
