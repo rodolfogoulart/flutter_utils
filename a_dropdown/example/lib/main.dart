@@ -40,7 +40,7 @@ class MainApp extends StatelessWidget {
       Books(name: 'Efésios', division: Division.nt),
     ];
 
-    ControllerADropDown controller = ControllerADropDown(items: []);
+    ControllerADropDown<Books> controller = ControllerADropDown(items: []);
     //build the items
     for (var item in bibleBooks) {
       controller.addItem(
