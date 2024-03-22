@@ -45,7 +45,7 @@ class ControllerADropDown<T> {
     _selectedItem.value ??= itens.firstOrNull?.value;
   }
 
-  isEmpty() {
+  bool isEmpty() {
     return _itens.value.isEmpty;
   }
 
@@ -57,7 +57,7 @@ class ControllerADropDown<T> {
     _selectedItem.value = value;
   }
 
-  removeItem(ADropDownItem<T> value) {
+  void removeItem(ADropDownItem<T> value) {
     _itens.remove(value);
   }
 
