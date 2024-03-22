@@ -8,9 +8,9 @@ const kDurationAnimation = Duration(milliseconds: 300);
 class ADropDownItem<T> {
   T value;
 
-  /// onTap callback to use on item builder click
+  /// [onTap] callback to use on item builder click
   ///
-  /// you can build the onTap here and just use on menuItemBuilder
+  /// you can build the default [onTap] here and just use on [menuItemBuilder]
   VoidCallback? onTap;
   ADropDownItem({
     required this.value,
@@ -85,6 +85,22 @@ class ControllerADropDown<T> {
 }
 
 //https://medium.com/snapp-x/creating-custom-dropdowns-with-overlayportal-in-flutter-4f09b217cfce
+
+/// [ADropDown] is a Custom DropDown Widget
+///
+/// you can build the **menu** with the [menuItemBuilder] and the **button** with the [buttonBuilder] as you want
+///
+/// set a animation for the menu and the button on the [animationBuilderMenu] and [animationBuilderButton]
+///
+/// set a default decoration for the menu and button on the [decorationMenu] and [decorationButton]
+///
+/// set your on menu background on the [menuBackgroundBuilder]
+///
+/// tips: use the [menuBackgroundBuilder] to set a size for the widget, other wise the default size will be used
+///
+/// use [controller] to control the menu, add itens, show and hide the menu, set the selected value and remove itens
+///
+/// the menu will be positioned on center of the Button, and the position of the menu will be relative to the button
 class ADropDown<T> extends StatefulWidget {
   const ADropDown({
     super.key,
@@ -98,7 +114,7 @@ class ADropDown<T> extends StatefulWidget {
     this.animationBuilderButton,
     this.decorationButton,
     this.textStyleButton,
-    this.paddingInBettween = EdgeInsets.zero,
+    this.paddingInBettween = 5,
   });
 
   final ControllerADropDown<T> controller;
@@ -130,8 +146,8 @@ class ADropDown<T> extends StatefulWidget {
   /// the text style of the button
   final TextStyle? textStyleButton;
 
-  /// add padding between the button and the menu
-  final EdgeInsetsGeometry paddingInBettween;
+  /// add padding between the [button] and the [menu] on vertical axis
+  final double paddingInBettween;
 
   @override
   State<ADropDown<T>> createState() => _ADropDownState<T>();
@@ -162,11 +178,7 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
     sizeScreen *= .7;
 
     // assert(widget.controller.itens.value.isNotEmpty, 'itens must not be empty');
-    return
-        // CompositedTransformTarget(
-        //   link: _layerLink,
-        //   child:
-        OverlayPortal(
+    return OverlayPortal(
       controller: widget.controller._overlayController,
       overlayChildBuilder: (BuildContext context) {
         ignoreOnTap = false;
@@ -209,13 +221,6 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
                   ],
                 ),
               );
-
-        if (widget.paddingInBettween != EdgeInsets.zero) {
-          child = Padding(
-            padding: widget.paddingInBettween,
-            child: child,
-          );
-        }
         //tapregion to hide menu on tap outside the menu
         child = TapRegion(
           onTapOutside: (event) {
@@ -227,22 +232,15 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
           },
           child: child,
         );
-        // print('_layerLink.leaderSize ${_layerLink.leaderSize}');
-        // print('_layerLink.leader?.offset ${_layerLink.leader?.offset}');
-        // print(' total ${(_layerLink.leader?.offset.dx ?? 0) + (_layerLink.leaderSize?.width ?? 0)}');
-        // print(MediaQuery.of(context).size);
-
-        // RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-        // var anchorSize = renderBox?.size;
-        // print('anchorSize $anchorSize');
         RenderBox? renderBox = myKeyButton.currentContext?.findRenderObject() as RenderBox?;
         var sizeButton = renderBox?.size;
         var offsetButton = renderBox?.localToGlobal(Offset.zero);
-        // print('anchorButton $sizeButton');
-        // print('offsetButton $offsetButton');
 
+        /// from https://stackoverflow.com/a/65547847/17966723
+        /// to position the menu
         return CustomSingleChildLayout(
-          delegate: MyDelegate(anchorSize: sizeButton!, anchorOffset: offsetButton!, sizeScreen: sizeScreen),
+          delegate: MyDelegate(
+              anchorSize: sizeButton!, anchorOffset: offsetButton!, sizeScreen: sizeScreen, padding: widget.paddingInBettween),
           child: child,
         );
       },
@@ -281,7 +279,6 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
               });
         },
       ),
-      // ),
     );
   }
 }
@@ -290,8 +287,9 @@ class MyDelegate extends SingleChildLayoutDelegate {
   final Size anchorSize;
   Offset anchorOffset;
   Size sizeScreen;
+  double padding;
 
-  MyDelegate({required this.anchorSize, required this.anchorOffset, required this.sizeScreen});
+  MyDelegate({required this.anchorSize, required this.anchorOffset, required this.sizeScreen, required this.padding});
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
@@ -301,31 +299,31 @@ class MyDelegate extends SingleChildLayoutDelegate {
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
-    // print('--------------------------');
-    // print("my size: $size");
-    // print("childSize: $childSize");
-    // print("anchor size being passed in: $anchorSize}");
-    // print("anchor offset being passed in: $anchorOffset}");
-    double paddingY = 5;
+    // debugPrint('--------------------------');
+    // debugPrint("my size: $size");
+    // debugPrint("childSize: $childSize");
+    // debugPrint("anchor size being passed in: $anchorSize}");
+    // debugPrint("anchor offset being passed in: $anchorOffset}");
+
     // where to position the child? perform calculation here:
     var newOffsetCenter =
         Offset((anchorOffset.dx - childSize.width / 2) + anchorSize.width / 2, anchorOffset.dy + anchorSize.height);
-    // print("newOffsetCenter: $newOffsetCenter");
-    // print('sizeScreen: $sizeScreen');
-    // print('--------------------------');
+    // debugPrint("newOffsetCenter: $newOffsetCenter");
+    // debugPrint('sizeScreen: $sizeScreen');
+    // debugPrint('--------------------------');
 
     if (newOffsetCenter.dx < 0) {
       newOffsetCenter = Offset(0, newOffsetCenter.dy);
     } else {
       if ((newOffsetCenter.dx + childSize.width) > size.width) {
         double fixPositionX = size.width - (newOffsetCenter.dx + childSize.width);
-        print('fixPos?itionX $fixPositionX');
+        // debugPrint('fixPos?itionX $fixPositionX');
         newOffsetCenter = Offset(newOffsetCenter.dx + fixPositionX, newOffsetCenter.dy);
       }
     }
-    // print('new position fixed: ${newOffsetCenter}');
+    // debugPrint('new position fixed: ${newOffsetCenter}');
     //
-    return Offset(newOffsetCenter.dx, newOffsetCenter.dy + paddingY);
+    return Offset(newOffsetCenter.dx, newOffsetCenter.dy + padding);
   }
 
   @override
