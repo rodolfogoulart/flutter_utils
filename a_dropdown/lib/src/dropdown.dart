@@ -20,27 +20,33 @@ class ADropDownItem<T> {
 
 class ControllerADropDown<T> {
   final OverlayPortalController _overlayController = OverlayPortalController();
-  final ValueNotifierList<ADropDownItem<T>> itens = ValueNotifierList();
+  final ValueNotifierList<ADropDownItem<T>> _itens = ValueNotifierList();
   final ValueNotifier<T?> _selectedItem = ValueNotifier<T?>(null);
 
   bool isShowing = false;
 
+  get itens => _itens.value;
+
   ControllerADropDown({
-    List<ADropDownItem<T>> items = const [],
+    List<ADropDownItem<T>> itens = const [],
   }) {
-    this.itens.addAll(items);
-    _selectedItem.value = items.firstOrNull?.value;
+    this._itens.addAll(itens);
+    _selectedItem.value = itens.firstOrNull?.value;
   }
 
   /// adds an item
   void addItem(ADropDownItem<T> item) {
-    itens.add(item);
-    _selectedItem.value ??= itens.value.firstOrNull?.value;
+    _itens.add(item);
+    _selectedItem.value ??= _itens.value.firstOrNull?.value;
   }
 
-  void addAllItens(List<ADropDownItem<T>> items) {
-    itens.addAll(items);
-    _selectedItem.value ??= items.firstOrNull?.value;
+  void addAllItens(List<ADropDownItem<T>> itens) {
+    _itens.addAll(itens);
+    _selectedItem.value ??= itens.firstOrNull?.value;
+  }
+
+  isEmpty() {
+    return _itens.value.isEmpty;
   }
 
   /// returns the selected value
@@ -52,11 +58,11 @@ class ControllerADropDown<T> {
   }
 
   removeItem(ADropDownItem<T> value) {
-    itens.remove(value);
+    _itens.remove(value);
   }
 
   void clear() {
-    itens.clear();
+    _itens.clear();
   }
 
   void showMenu() {
@@ -92,12 +98,13 @@ class ADropDown<T> extends StatefulWidget {
     this.animationBuilderButton,
     this.decorationButton,
     this.textStyleButton,
+    this.paddingInBettween = EdgeInsets.zero,
   });
 
   final ControllerADropDown<T> controller;
 
-  /// builder of the menu items
-  final Widget Function(BuildContext context, List<ADropDownItem<T>> items) menuItemBuilder;
+  /// builder of the menu itens
+  final Widget Function(BuildContext context, List<ADropDownItem<T>> itens) menuItemBuilder;
 
   /// builder of the menu background
   final Widget Function(BuildContext context, Widget child)? menuBackgroundBuilder;
@@ -123,12 +130,15 @@ class ADropDown<T> extends StatefulWidget {
   /// the text style of the button
   final TextStyle? textStyleButton;
 
+  /// add padding between the button and the menu
+  final EdgeInsetsGeometry paddingInBettween;
+
   @override
   State<ADropDown<T>> createState() => _ADropDownState<T>();
 }
 
 class _ADropDownState<T> extends State<ADropDown<T>> {
-  final LayerLink _layerLink = LayerLink();
+  // final LayerLink _layerLink = LayerLink();
 
   @override
   void dispose() {
@@ -142,103 +152,182 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
 
   /// to ignore onTap when TapRegion is outside
   bool ignoreOnTap = false;
+  bool isHouverButtom = false;
+
+  GlobalKey<State<StatefulWidget>> myKeyButton = GlobalKey();
   @override
   Widget build(BuildContext context) {
     final themeDropDown = Theme.of(context).dropdownMenuTheme;
     var sizeScreen = MediaQuery.of(context).size;
     sizeScreen *= .7;
 
-    assert(widget.controller.itens.value.isNotEmpty, 'items must not be empty');
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: OverlayPortal(
-        controller: widget.controller._overlayController,
-        overlayChildBuilder: (BuildContext context) {
-          ignoreOnTap = false;
-          var child = widget.animationBuilderMenu != null
-              ? widget.animationBuilderMenu!(
-                  context,
-                  Container(
-                    constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
-                    child: widget.menuItemBuilder
-                        .call(context, widget.controller.itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList()),
-                  ),
-                )
-              : FadeContainer(
-                  duration: kDurationAnimation,
-                  child: Container(
-                    constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
-                    child: widget.menuItemBuilder.call(
-                      context,
-                      widget.controller.itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList(),
-                    ),
-                  ),
-                );
-
-          child = widget.menuBackgroundBuilder != null
-              ? widget.menuBackgroundBuilder!(context, child)
-              : Container(
-                  decoration: widget.decorationMenu ??
-                      BoxDecoration(color: Theme.of(context).canvasColor, borderRadius: BorderRadius.circular(25)),
+    // assert(widget.controller.itens.value.isNotEmpty, 'itens must not be empty');
+    return
+        // CompositedTransformTarget(
+        //   link: _layerLink,
+        //   child:
+        OverlayPortal(
+      controller: widget.controller._overlayController,
+      overlayChildBuilder: (BuildContext context) {
+        ignoreOnTap = false;
+        var child = widget.animationBuilderMenu != null
+            ? widget.animationBuilderMenu!(
+                context,
+                Container(
                   constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Expanded(
-                        child: Material(
-                          type: MaterialType.transparency,
-                          textStyle: widget.textStyleMenu,
-                          child: child,
-                        ),
-                      ),
-                    ],
+                  child: widget.menuItemBuilder
+                      .call(context, widget.controller._itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList()),
+                ),
+              )
+            : FadeContainer(
+                duration: kDurationAnimation,
+                child: Container(
+                  constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
+                  child: widget.menuItemBuilder.call(
+                    context,
+                    widget.controller._itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList(),
                   ),
-                );
-          child = TapRegion(
-            onTapOutside: (event) {
-              widget.controller.hideMenu();
-              ignoreOnTap = true;
-            },
+                ),
+              );
+
+        child = widget.menuBackgroundBuilder != null
+            ? widget.menuBackgroundBuilder!(context, child)
+            : Container(
+                decoration: widget.decorationMenu ??
+                    BoxDecoration(color: Theme.of(context).canvasColor, borderRadius: BorderRadius.circular(25)),
+                constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Expanded(
+                      child: Material(
+                        type: MaterialType.transparency,
+                        textStyle: widget.textStyleMenu,
+                        child: child,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+        if (widget.paddingInBettween != EdgeInsets.zero) {
+          child = Padding(
+            padding: widget.paddingInBettween,
             child: child,
           );
+        }
+        //tapregion to hide menu on tap outside the menu
+        child = TapRegion(
+          onTapOutside: (event) {
+            //check if is houver Button to ignore onTap
+            if (isHouverButtom) {
+              return;
+            }
+            widget.controller.hideMenu();
+          },
+          child: child,
+        );
+        // print('_layerLink.leaderSize ${_layerLink.leaderSize}');
+        // print('_layerLink.leader?.offset ${_layerLink.leader?.offset}');
+        // print(' total ${(_layerLink.leader?.offset.dx ?? 0) + (_layerLink.leaderSize?.width ?? 0)}');
+        // print(MediaQuery.of(context).size);
 
-          return CompositedTransformFollower(
-            link: _layerLink,
-            targetAnchor: Alignment.bottomLeft,
-            child: Align(
-              alignment: AlignmentDirectional.topStart,
-              child: child,
-            ),
-          );
-        },
-        child: ValueListenableBuilder(
-          valueListenable: widget.controller._selectedItem,
-          builder: (context, selected, child) {
-            Widget button = AButton(
-              onTap: onTap,
+        // RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        // var anchorSize = renderBox?.size;
+        // print('anchorSize $anchorSize');
+        RenderBox? renderBox = myKeyButton.currentContext?.findRenderObject() as RenderBox?;
+        var sizeButton = renderBox?.size;
+        var offsetButton = renderBox?.localToGlobal(Offset.zero);
+        // print('anchorButton $sizeButton');
+        // print('offsetButton $offsetButton');
+
+        return CustomSingleChildLayout(
+          delegate: MyDelegate(anchorSize: sizeButton!, anchorOffset: offsetButton!, sizeScreen: sizeScreen),
+          child: child,
+        );
+      },
+      child: ValueListenableBuilder(
+        valueListenable: widget.controller._selectedItem,
+        builder: (context, selected, child) {
+          Widget button = MouseRegion(
+            onEnter: (event) {
+              isHouverButtom = true;
+            },
+            onExit: (event) {
+              isHouverButtom = false;
+            },
+            child: AButton(
+              onTap: () {
+                widget.controller.showMenu();
+              },
               decoration: widget.decorationButton ?? BoxDecoration(borderRadius: BorderRadius.circular(25)),
               textStyle: widget.textStyleButton ?? themeDropDown.textStyle ?? DefaultTextStyle.of(context).style,
               child: widget.buttonBuilder.call(context, widget.controller.selectedValue as T),
+            ),
+          );
+          Widget child;
+          if (widget.animationBuilderButton != null) {
+            child = widget.animationBuilderButton!(context, button);
+          } else {
+            child = FadeContainer(
+              duration: kDurationAnimation,
+              child: button,
             );
-            if (widget.animationBuilderButton != null) {
-              return widget.animationBuilderButton!(context, button);
-            } else {
-              return FadeContainer(
-                duration: kDurationAnimation,
-                child: button,
-              );
-            }
-          },
-        ),
+          }
+          return Builder(
+              key: myKeyButton,
+              builder: (context) {
+                return child;
+              });
+        },
       ),
+      // ),
     );
   }
+}
 
-  void onTap() {
-    if (ignoreOnTap) {
-      ignoreOnTap = false;
-      return;
-    }
-    widget.controller.showMenu();
+class MyDelegate extends SingleChildLayoutDelegate {
+  final Size anchorSize;
+  Offset anchorOffset;
+  Size sizeScreen;
+
+  MyDelegate({required this.anchorSize, required this.anchorOffset, required this.sizeScreen});
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    // we allow our child to be smaller than parent's constraint:
+    return constraints.loosen();
   }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    // print('--------------------------');
+    // print("my size: $size");
+    // print("childSize: $childSize");
+    // print("anchor size being passed in: $anchorSize}");
+    // print("anchor offset being passed in: $anchorOffset}");
+    double paddingY = 5;
+    // where to position the child? perform calculation here:
+    var newOffsetCenter =
+        Offset((anchorOffset.dx - childSize.width / 2) + anchorSize.width / 2, anchorOffset.dy + anchorSize.height);
+    // print("newOffsetCenter: $newOffsetCenter");
+    // print('sizeScreen: $sizeScreen');
+    // print('--------------------------');
+
+    if (newOffsetCenter.dx < 0) {
+      newOffsetCenter = Offset(0, newOffsetCenter.dy);
+    } else {
+      if ((newOffsetCenter.dx + childSize.width) > size.width) {
+        double fixPositionX = size.width - (newOffsetCenter.dx + childSize.width);
+        print('fixPos?itionX $fixPositionX');
+        newOffsetCenter = Offset(newOffsetCenter.dx + fixPositionX, newOffsetCenter.dy);
+      }
+    }
+    // print('new position fixed: ${newOffsetCenter}');
+    //
+    return Offset(newOffsetCenter.dx, newOffsetCenter.dy + paddingY);
+  }
+
+  @override
+  bool shouldRelayout(SingleChildLayoutDelegate oldDelegate) => true;
 }
