@@ -25,7 +25,7 @@ class ControllerADropDown<T> {
 
   bool isShowing = false;
 
-  get itens => _itens.value;
+  List<T> get itens => _itens.value.map((e) => e.value).toList();
 
   ControllerADropDown({
     List<ADropDownItem<T>> itens = const [],

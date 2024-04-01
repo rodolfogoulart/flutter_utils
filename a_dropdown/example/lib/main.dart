@@ -17,9 +17,15 @@ class Books {
   });
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   const MainApp({super.key});
 
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  var crossAxisAlignment = CrossAxisAlignment.center;
   @override
   Widget build(BuildContext context) {
     final List<Books> bibleBooks = [
@@ -58,9 +64,39 @@ class MainApp extends StatelessWidget {
         ),
         body: Column(
           mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: crossAxisAlignment,
           children: [
-            const Text('This example sow a Multi List Menu on DropDown'),
+            const Center(child: Text('This example sow a Multi List Menu on DropDown')),
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      crossAxisAlignment = CrossAxisAlignment.start;
+                    });
+                  },
+                  child: const Text('Align colum to: Start'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      crossAxisAlignment = CrossAxisAlignment.center;
+                    });
+                  },
+                  child: const Text('Align colum to: Center'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      crossAxisAlignment = CrossAxisAlignment.end;
+                    });
+                  },
+                  child: const Text('Align colum to: End'),
+                )
+              ],
+            ),
             const Divider(),
             ADropDown<Books>(
               controller: controller,
