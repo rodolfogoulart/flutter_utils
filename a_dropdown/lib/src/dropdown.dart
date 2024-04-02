@@ -174,13 +174,19 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
   @override
   Widget build(BuildContext context) {
     final themeDropDown = Theme.of(context).dropdownMenuTheme;
-    var sizeScreen = MediaQuery.of(context).size;
-    sizeScreen *= .7;
 
     // assert(widget.controller.itens.value.isNotEmpty, 'itens must not be empty');
     return OverlayPortal(
       controller: widget.controller._overlayController,
       overlayChildBuilder: (BuildContext context) {
+        Size sizeScreen = MediaQuery.of(context).size;
+        // sizeScreen *= .9;
+        RenderBox? renderBox = myKeyButton.currentContext?.findRenderObject() as RenderBox?;
+        Size? sizeButton = renderBox?.size;
+        Offset? offsetButton = renderBox?.localToGlobal(Offset.zero);
+        //fix the size with the offset of the button - the size of the button - the padding
+        sizeScreen = Size(sizeScreen.width, sizeScreen.height - offsetButton!.dy - sizeButton!.height - widget.paddingInBettween);
+        //
         ignoreOnTap = false;
         var child = widget.animationBuilderMenu != null
             ? widget.animationBuilderMenu!(
@@ -232,15 +238,12 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
           },
           child: child,
         );
-        RenderBox? renderBox = myKeyButton.currentContext?.findRenderObject() as RenderBox?;
-        var sizeButton = renderBox?.size;
-        var offsetButton = renderBox?.localToGlobal(Offset.zero);
 
         /// from https://stackoverflow.com/a/65547847/17966723
         /// to position the menu
         return CustomSingleChildLayout(
           delegate: MyDelegate(
-              anchorSize: sizeButton!, anchorOffset: offsetButton!, sizeScreen: sizeScreen, padding: widget.paddingInBettween),
+              anchorSize: sizeButton, anchorOffset: offsetButton, sizeScreen: sizeScreen, padding: widget.paddingInBettween),
           child: child,
         );
       },
@@ -323,7 +326,8 @@ class MyDelegate extends SingleChildLayoutDelegate {
     }
     // debugPrint('new position fixed: ${newOffsetCenter}');
     //
-    return Offset(newOffsetCenter.dx, newOffsetCenter.dy + padding);
+    Offset newOffset = Offset(newOffsetCenter.dx, newOffsetCenter.dy + padding);
+    return newOffset;
   }
 
   @override
