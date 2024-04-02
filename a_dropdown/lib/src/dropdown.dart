@@ -180,7 +180,7 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
       controller: widget.controller._overlayController,
       overlayChildBuilder: (BuildContext context) {
         Size sizeScreen = MediaQuery.of(context).size;
-        // sizeScreen *= .9;
+        sizeScreen *= .95;
         RenderBox? renderBox = myKeyButton.currentContext?.findRenderObject() as RenderBox?;
         Size? sizeButton = renderBox?.size;
         Offset? offsetButton = renderBox?.localToGlobal(Offset.zero);
