@@ -52,8 +52,13 @@ class ControllerADropDown<T> {
   /// returns the selected value
   T? get selectedValue => _selectedItem.value;
 
-  void setValue(T value) {
-    hideMenu();
+  ///when set hide = false the menu will not hide when the user click
+  ///
+  ///useful when you want to continue showing the menu after the user click on a value (checkbox)
+  ///
+  ///default value = true
+  void setValue(T value, {bool hide = true}) {
+    if (hide) hideMenu();
     _selectedItem.value = value;
   }
 
