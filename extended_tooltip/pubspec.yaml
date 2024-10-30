@@ -1,6 +1,6 @@
 name: extended_tooltip
 description: "Extended tooltip package, it extends the functionality of [Tooltip] adding the option to pass a Widget as tooltip."
-version: 0.0.4
+version: 0.0.5
 homepage: https://github.com/rodolfogoulart/flutter_utils/tree/master/extended_tooltip
 repository: https://github.com/rodolfogoulart/flutter_utils
 issue_tracker: https://github.com/rodolfogoulart/flutter_utils/issues
