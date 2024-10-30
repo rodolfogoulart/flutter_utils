@@ -36,6 +36,8 @@ class ExtendedToolTip extends StatefulWidget {
   ///```dart
   ///Theme.of(context).tooltipTheme.decoration
   ///```
+  ///
+  /// or user the decoration: const BoxDecoration(), to get from the context
   final BoxDecoration? decoration;
 
   ///TextStyle for Material tooltip
@@ -46,16 +48,19 @@ class ExtendedToolTip extends StatefulWidget {
   ///```
   final TextStyle? textStyle;
 
-  const ExtendedToolTip({
-    super.key,
-    required this.child,
-    required this.message,
-    this.horizontalPosition = ExtendedTooltipPosition.right,
-    this.animation = const Duration(milliseconds: 200),
-    this.keepTooltipWhenMouseHover = true,
-    this.decoration,
-    this.textStyle,
-  });
+  ///when is mobile
+  final bool useGestureDetector;
+
+  const ExtendedToolTip(
+      {super.key,
+      required this.child,
+      required this.message,
+      this.horizontalPosition = ExtendedTooltipPosition.right,
+      this.animation = const Duration(milliseconds: 200),
+      this.keepTooltipWhenMouseHover = true,
+      this.decoration,
+      this.textStyle,
+      this.useGestureDetector = false});
 
   @override
   State<ExtendedToolTip> createState() => _ExtendedToolTipState();
@@ -66,20 +71,48 @@ class _ExtendedToolTipState extends State<ExtendedToolTip> {
   bool isMouseOverMessage = false;
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (details) {
-        showOverlay(context);
-        isMouseOverMessage = true;
-      },
-      onExit: (details) async {
-        isMouseOverMessage = false;
-        await Future.delayed(const Duration(milliseconds: 100)).then((value) {
-          if (isMouseOverMessage) return;
-          if (!isMouseOverMessage) hideOverlay();
-        });
-      },
-      child: CompositedTransformTarget(link: layerLink, child: widget.child),
-    );
+    if (widget.useGestureDetector) {
+      return GestureDetector(
+        onTap: () async {
+          if (isMouseOverMessage) {
+            isMouseOverMessage = false;
+            await Future.delayed(const Duration(milliseconds: 100)).then((value) {
+              if (isMouseOverMessage) return;
+              if (!isMouseOverMessage) hideOverlay();
+            });
+          } else {
+            showOverlay(context);
+            isMouseOverMessage = true;
+          }
+        },
+        child: CompositedTransformTarget(
+            link: layerLink,
+            child: TapRegion(
+                onTapOutside: (event) async {
+                  isMouseOverMessage = false;
+                  await Future.delayed(const Duration(milliseconds: 100)).then((value) {
+                    if (isMouseOverMessage) return;
+                    if (!isMouseOverMessage) hideOverlay();
+                  });
+                },
+                child: widget.child)),
+      );
+    } else {
+      return MouseRegion(
+        onEnter: (details) {
+          showOverlay(context);
+          isMouseOverMessage = true;
+        },
+        onExit: (details) async {
+          isMouseOverMessage = false;
+          await Future.delayed(const Duration(milliseconds: 100)).then((value) {
+            if (isMouseOverMessage) return;
+            if (!isMouseOverMessage) hideOverlay();
+          });
+        },
+        child: CompositedTransformTarget(link: layerLink, child: widget.child),
+      );
+    }
   }
 
   OverlayEntry? entry;
@@ -112,8 +145,7 @@ class _ExtendedToolTipState extends State<ExtendedToolTip> {
             //set the position
             if (widget.horizontalPosition == ExtendedTooltipPosition.left) {
               offSetPosition = offSetPosition.copyWith(dx: -(value.width));
-            } else if (widget.horizontalPosition ==
-                ExtendedTooltipPosition.center) {
+            } else if (widget.horizontalPosition == ExtendedTooltipPosition.center) {
               offSetPosition = offSetPosition.copyWith(dx: (value.width) / -2);
             }
             //
