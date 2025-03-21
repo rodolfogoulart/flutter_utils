@@ -1,7 +1,7 @@
 name: a_dropdown
 description: "Build your own dropDown widget, customize the menu and the button as you want"
-version: 0.0.4
-homepage:
+version: 0.0.5
+# homepage:
 
 environment:
   sdk: '>=3.3.1 <4.0.0'
@@ -20,7 +20,7 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-flutter:
+# flutter:
 
   # To add assets to your package, add an assets section, like this:
   # assets:

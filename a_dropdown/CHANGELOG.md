@@ -1,4 +1,7 @@
-## 0.0.3
+## 0.0.5
+* Add callback whenShowMenu, whenHideMenu to Controller
+* Add CallBackShortCut to widget
+## 0.0.4
 * add the option to not hide the menu after a value is selected
  * userfull when need to check multiple values
 ## 0.0.3
