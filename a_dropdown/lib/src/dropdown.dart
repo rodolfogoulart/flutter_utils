@@ -2,6 +2,7 @@ import 'package:a_dropdown/src/button.dart';
 import 'package:a_dropdown/src/utils/fade_container.dart';
 import 'package:a_dropdown/src/utils/value_notifier_list.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 const kDurationAnimation = Duration(milliseconds: 300);
 
@@ -23,12 +24,20 @@ class ControllerADropDown<T> {
   final ValueNotifierList<ADropDownItem<T>> _itens = ValueNotifierList();
   final ValueNotifier<T?> _selectedItem = ValueNotifier<T?>(null);
 
+  /// callback when the menu is showing
+  final VoidCallback? whenShowMenu;
+
+  /// callback when the menu is hiding
+  final VoidCallback? whenHideMenu;
+
   bool isShowing = false;
 
   List<T> get itens => _itens.value.map((e) => e.value).toList();
 
   ControllerADropDown({
     List<ADropDownItem<T>> itens = const [],
+    this.whenHideMenu,
+    this.whenShowMenu,
   }) {
     this._itens.addAll(itens);
     _selectedItem.value = itens.firstOrNull?.value;
@@ -72,11 +81,17 @@ class ControllerADropDown<T> {
 
   void showMenu() {
     isShowing = !isShowing;
+    if (isShowing) {
+      whenShowMenu?.call();
+    } else {
+      whenHideMenu?.call();
+    }
     _overlayController.toggle();
   }
 
   void hideMenu() {
     isShowing = false;
+    whenHideMenu?.call();
     try {
       _overlayController.hide();
     } catch (e) {
@@ -120,6 +135,7 @@ class ADropDown<T> extends StatefulWidget {
     this.decorationButton,
     this.textStyleButton,
     this.paddingInBettween = 5,
+    this.bindingsShortCut = const {},
   });
 
   final ControllerADropDown<T> controller;
@@ -154,6 +170,8 @@ class ADropDown<T> extends StatefulWidget {
   /// add padding between the [button] and the [menu] on vertical axis
   final double paddingInBettween;
 
+  final Map<ShortcutActivator, void Function()> bindingsShortCut;
+
   @override
   State<ADropDown<T>> createState() => _ADropDownState<T>();
 }
@@ -181,111 +199,120 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
     final themeDropDown = Theme.of(context).dropdownMenuTheme;
 
     // assert(widget.controller.itens.value.isNotEmpty, 'itens must not be empty');
-    return OverlayPortal(
-      controller: widget.controller._overlayController,
-      overlayChildBuilder: (BuildContext context) {
-        Size sizeScreen = MediaQuery.of(context).size;
-        sizeScreen *= .95;
-        RenderBox? renderBox = myKeyButton.currentContext?.findRenderObject() as RenderBox?;
-        Size? sizeButton = renderBox?.size;
-        Offset? offsetButton = renderBox?.localToGlobal(Offset.zero);
-        //fix the size with the offset of the button - the size of the button - the padding
-        sizeScreen = Size(sizeScreen.width, sizeScreen.height - offsetButton!.dy - sizeButton!.height - widget.paddingInBettween);
-        //
-        ignoreOnTap = false;
-        var child = widget.animationBuilderMenu != null
-            ? widget.animationBuilderMenu!(
-                context,
-                Container(
-                  constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
-                  child: widget.menuItemBuilder
-                      .call(context, widget.controller._itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList()),
-                ),
-              )
-            : FadeContainer(
-                duration: kDurationAnimation,
-                child: Container(
-                  constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
-                  child: widget.menuItemBuilder.call(
-                    context,
-                    widget.controller._itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList(),
-                  ),
-                ),
-              );
-
-        child = widget.menuBackgroundBuilder != null
-            ? widget.menuBackgroundBuilder!(context, child)
-            : Container(
-                decoration: widget.decorationMenu ??
-                    BoxDecoration(color: Theme.of(context).canvasColor, borderRadius: BorderRadius.circular(25)),
-                constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Expanded(
-                      child: Material(
-                        type: MaterialType.transparency,
-                        textStyle: widget.textStyleMenu,
-                        child: child,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-        //tapregion to hide menu on tap outside the menu
-        child = TapRegion(
-          onTapOutside: (event) {
-            //check if is houver Button to ignore onTap
-            if (isHouverButtom) {
-              return;
-            }
-            widget.controller.hideMenu();
-          },
-          child: child,
-        );
-
-        /// from https://stackoverflow.com/a/65547847/17966723
-        /// to position the menu
-        return CustomSingleChildLayout(
-          delegate: MyDelegate(
-              anchorSize: sizeButton, anchorOffset: offsetButton, sizeScreen: sizeScreen, padding: widget.paddingInBettween),
-          child: child,
-        );
-      },
-      child: ValueListenableBuilder(
-        valueListenable: widget.controller._selectedItem,
-        builder: (context, selected, child) {
-          Widget button = MouseRegion(
-            onEnter: (event) {
-              isHouverButtom = true;
-            },
-            onExit: (event) {
-              isHouverButtom = false;
-            },
-            child: AButton(
-              onTap: () {
-                widget.controller.showMenu();
-              },
-              decoration: widget.decorationButton ?? BoxDecoration(borderRadius: BorderRadius.circular(25)),
-              textStyle: widget.textStyleButton ?? themeDropDown.textStyle ?? DefaultTextStyle.of(context).style,
-              child: widget.buttonBuilder.call(context, widget.controller.selectedValue as T),
-            ),
-          );
-          Widget child;
-          if (widget.animationBuilderButton != null) {
-            child = widget.animationBuilderButton!(context, button);
-          } else {
-            child = FadeContainer(
-              duration: kDurationAnimation,
-              child: button,
-            );
-          }
-          return Builder(
-              key: myKeyButton,
-              builder: (context) {
-                return child;
-              });
+    return CallbackShortcuts(
+      bindings: {
+        LogicalKeySet(LogicalKeyboardKey.escape): () {
+          widget.controller.hideMenu();
         },
+        ...widget.bindingsShortCut,
+      },
+      child: OverlayPortal(
+        controller: widget.controller._overlayController,
+        overlayChildBuilder: (BuildContext context) {
+          Size sizeScreen = MediaQuery.of(context).size;
+          sizeScreen *= .95;
+          RenderBox? renderBox = myKeyButton.currentContext?.findRenderObject() as RenderBox?;
+          Size? sizeButton = renderBox?.size;
+          Offset? offsetButton = renderBox?.localToGlobal(Offset.zero);
+          //fix the size with the offset of the button - the size of the button - the padding
+          sizeScreen =
+              Size(sizeScreen.width, sizeScreen.height - offsetButton!.dy - sizeButton!.height - widget.paddingInBettween);
+          //
+          ignoreOnTap = false;
+          var child = widget.animationBuilderMenu != null
+              ? widget.animationBuilderMenu!(
+                  context,
+                  Container(
+                    constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
+                    child: widget.menuItemBuilder
+                        .call(context, widget.controller._itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList()),
+                  ),
+                )
+              : FadeContainer(
+                  duration: kDurationAnimation,
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
+                    child: widget.menuItemBuilder.call(
+                      context,
+                      widget.controller._itens.value.map((e) => ADropDownItem<T>(value: e.value)).toList(),
+                    ),
+                  ),
+                );
+
+          child = widget.menuBackgroundBuilder != null
+              ? widget.menuBackgroundBuilder!(context, child)
+              : Container(
+                  decoration: widget.decorationMenu ??
+                      BoxDecoration(color: Theme.of(context).canvasColor, borderRadius: BorderRadius.circular(25)),
+                  constraints: BoxConstraints(maxWidth: sizeScreen.width, maxHeight: sizeScreen.height - 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Expanded(
+                        child: Material(
+                          type: MaterialType.transparency,
+                          textStyle: widget.textStyleMenu,
+                          child: child,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+          //tapregion to hide menu on tap outside the menu
+          child = TapRegion(
+            onTapOutside: (event) {
+              //check if is houver Button to ignore onTap
+              if (isHouverButtom) {
+                return;
+              }
+              widget.controller.hideMenu();
+            },
+            child: child,
+          );
+
+          /// from https://stackoverflow.com/a/65547847/17966723
+          /// to position the menu
+          return CustomSingleChildLayout(
+            delegate: MyDelegate(
+                anchorSize: sizeButton, anchorOffset: offsetButton, sizeScreen: sizeScreen, padding: widget.paddingInBettween),
+            child: child,
+          );
+        },
+        child: ValueListenableBuilder(
+          valueListenable: widget.controller._selectedItem,
+          builder: (context, selected, child) {
+            Widget button = MouseRegion(
+              onEnter: (event) {
+                isHouverButtom = true;
+              },
+              onExit: (event) {
+                isHouverButtom = false;
+              },
+              child: AButton(
+                onTap: () {
+                  widget.controller.showMenu();
+                },
+                decoration: widget.decorationButton ?? BoxDecoration(borderRadius: BorderRadius.circular(25)),
+                textStyle: widget.textStyleButton ?? themeDropDown.textStyle ?? DefaultTextStyle.of(context).style,
+                child: widget.buttonBuilder.call(context, widget.controller.selectedValue as T),
+              ),
+            );
+            Widget child;
+            if (widget.animationBuilderButton != null) {
+              child = widget.animationBuilderButton!(context, button);
+            } else {
+              child = FadeContainer(
+                duration: kDurationAnimation,
+                child: button,
+              );
+            }
+            return Builder(
+                key: myKeyButton,
+                builder: (context) {
+                  return child;
+                });
+          },
+        ),
       ),
     );
   }
