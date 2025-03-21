@@ -30,6 +30,8 @@ class ControllerADropDown<T> {
   /// callback when the menu is hiding
   final VoidCallback? whenHideMenu;
 
+  final FocusNode? focusNode;
+
   bool isShowing = false;
 
   List<T> get itens => _itens.value.map((e) => e.value).toList();
@@ -38,6 +40,7 @@ class ControllerADropDown<T> {
     List<ADropDownItem<T>> itens = const [],
     this.whenHideMenu,
     this.whenShowMenu,
+    this.focusNode,
   }) {
     this._itens.addAll(itens);
     _selectedItem.value = itens.firstOrNull?.value;

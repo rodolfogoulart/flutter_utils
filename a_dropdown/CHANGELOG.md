@@ -1,5 +1,5 @@
 ## 0.0.5
-* Add callback whenShowMenu, whenHideMenu to Controller
+* Add callback whenShowMenu, whenHideMenu, focusNode to Controller
 * Add CallBackShortCut to widget
 ## 0.0.4
 * add the option to not hide the menu after a value is selected
