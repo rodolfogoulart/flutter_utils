@@ -1,6 +1,6 @@
 name: a_dropdown
 description: "Build your own dropDown widget, customize the menu and the button as you want"
-version: 0.0.5
+version: 0.0.6
 # homepage:
 
 environment:

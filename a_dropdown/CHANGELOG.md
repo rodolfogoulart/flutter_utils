@@ -1,3 +1,5 @@
+## 0.0.6
+* Fix when screen is too small or when the Dropdown is rendered on middle of the screen on a mobile, height get to small
 ## 0.0.5
 * Add callback whenShowMenu, whenHideMenu, focusNode to Controller
 * Add CallBackShortCut to widget

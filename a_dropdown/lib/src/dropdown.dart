@@ -220,7 +220,10 @@ class _ADropDownState<T> extends State<ADropDown<T>> {
           //fix the size with the offset of the button - the size of the button - the padding
           sizeScreen =
               Size(sizeScreen.width, sizeScreen.height - offsetButton!.dy - sizeButton!.height - widget.paddingInBettween);
-          //
+          //when the screen is too small
+          if (sizeScreen.height < kMinInteractiveDimension) {
+            sizeScreen = Size(sizeScreen.width, kMinInteractiveDimension * 2);
+          }
           ignoreOnTap = false;
           var child = widget.animationBuilderMenu != null
               ? widget.animationBuilderMenu!(
