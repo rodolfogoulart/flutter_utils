@@ -1,3 +1,6 @@
+## 0.0.6
+* Fix CompositedTransformFollower 
+
 ## 0.0.5
 * Add userGestureDetector property
  * when true, will use the Tap event instead of the Mouse event

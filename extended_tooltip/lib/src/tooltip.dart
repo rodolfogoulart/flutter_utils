@@ -9,46 +9,14 @@ enum ExtendedTooltipPosition { right, left, center }
 /// [ExtendedToolTip]
 ///
 /// Extends the functionality of [Tooltip]
-///
-/// This widget uses [CompositedTransformTarget] to position the [Tooltip] widget, and the tooltip is build using overlay
-///
-/// The position of the tooltip is based on the [horizontalPosition], but is overridden if the [Tooltip] widget is off the screen
 class ExtendedToolTip extends StatefulWidget {
   final Widget child;
-
-  ///your custom tooltip widget message
   final Widget message;
-
-  ///default [ExtendedTooltipVerticalHorizontalPosition.right]
-  ///
-  ///horizontal position of the tooltip in relation to the child
   final ExtendedTooltipPosition? horizontalPosition;
-
-  ///default 200 milliseconds
   final Duration animation;
-
-  ///keep the tooltip on screen to interact if mouse is hovering the message
-  ///
-  ///default [true]
   final bool keepTooltipWhenMouseHover;
-
-  ///default [BoxDecoration]:
-  ///```dart
-  ///Theme.of(context).tooltipTheme.decoration
-  ///```
-  ///
-  /// or user the decoration: const BoxDecoration(), to get from the context
   final BoxDecoration? decoration;
-
-  ///TextStyle for Material tooltip
-  ///
-  ///default value:
-  ///```dart
-  ///Theme.of(context).tooltipTheme.textStyle
-  ///```
   final TextStyle? textStyle;
-
-  ///when is mobile
   final bool useGestureDetector;
 
   const ExtendedToolTip(
@@ -66,19 +34,50 @@ class ExtendedToolTip extends StatefulWidget {
   State<ExtendedToolTip> createState() => _ExtendedToolTipState();
 }
 
-class _ExtendedToolTipState extends State<ExtendedToolTip> {
+class _ExtendedToolTipState extends State<ExtendedToolTip>
+    with WidgetsBindingObserver {
   final layerLink = LayerLink();
   bool isMouseOverMessage = false;
+  OverlayEntry? entry;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    hideOverlay();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Hide overlay quando app vai para background
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      hideOverlay();
+      isMouseOverMessage = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.useGestureDetector) {
       return GestureDetector(
         onTap: () async {
+          if (!mounted) return;
+
           if (isMouseOverMessage) {
             isMouseOverMessage = false;
-            await Future.delayed(const Duration(milliseconds: 100)).then((value) {
+            await Future.delayed(const Duration(milliseconds: 100))
+                .then((value) {
+              if (!mounted) return;
               if (isMouseOverMessage) return;
-              if (!isMouseOverMessage) hideOverlay();
+              hideOverlay();
             });
           } else {
             showOverlay(context);
@@ -89,10 +88,13 @@ class _ExtendedToolTipState extends State<ExtendedToolTip> {
             link: layerLink,
             child: TapRegion(
                 onTapOutside: (event) async {
+                  if (!mounted) return;
                   isMouseOverMessage = false;
-                  await Future.delayed(const Duration(milliseconds: 100)).then((value) {
+                  await Future.delayed(const Duration(milliseconds: 100))
+                      .then((value) {
+                    if (!mounted) return;
                     if (isMouseOverMessage) return;
-                    if (!isMouseOverMessage) hideOverlay();
+                    hideOverlay();
                   });
                 },
                 child: widget.child)),
@@ -100,14 +102,17 @@ class _ExtendedToolTipState extends State<ExtendedToolTip> {
     } else {
       return MouseRegion(
         onEnter: (details) {
+          if (!mounted) return;
           showOverlay(context);
           isMouseOverMessage = true;
         },
         onExit: (details) async {
+          if (!mounted) return;
           isMouseOverMessage = false;
           await Future.delayed(const Duration(milliseconds: 100)).then((value) {
+            if (!mounted) return;
             if (isMouseOverMessage) return;
-            if (!isMouseOverMessage) hideOverlay();
+            hideOverlay();
           });
         },
         child: CompositedTransformTarget(link: layerLink, child: widget.child),
@@ -115,75 +120,86 @@ class _ExtendedToolTipState extends State<ExtendedToolTip> {
     }
   }
 
-  OverlayEntry? entry;
   showOverlay(BuildContext context) {
-    final overlay = Overlay.of(context);
-    final renderBox = context.findRenderObject() as RenderBox;
-    final size = renderBox.size;
-    final offSetChild = renderBox.localToGlobal(Offset.zero);
-    if (entry != null) {
-      return;
-    }
-    //[right] position, the overlay will be show on the right of the widget
-    var offSetPosition = Offset(size.width, size.height);
+    if (!mounted) return;
+    if (entry != null) return;
 
-    var sizeScreen = MediaQuery.of(context).size;
+    // Verificar se o context ainda é válido
+    if (!context.mounted) return;
 
-    Widget overlayWidget = buildOverlay();
+    try {
+      final overlay = Overlay.of(context);
+      final renderBox = context.findRenderObject() as RenderBox?;
 
-    ValueNotifier<Size> overlaySize = ValueNotifier<Size>(Size.zero);
+      // Verificar se renderBox existe e está attached
+      if (renderBox == null || !renderBox.attached) return;
 
-    ThemeData theme = Theme.of(context);
+      final size = renderBox.size;
+      final offSetChild = renderBox.localToGlobal(Offset.zero);
 
-    entry = OverlayEntry(
-      builder: (context) => Positioned(
-        right: offSetChild.dx,
-        // top: offSetChild.dy,
-        child: ValueListenableBuilder(
-          valueListenable: overlaySize,
-          builder: (context, value, child) {
-            //set the position
-            if (widget.horizontalPosition == ExtendedTooltipPosition.left) {
-              offSetPosition = offSetPosition.copyWith(dx: -(value.width));
-            } else if (widget.horizontalPosition == ExtendedTooltipPosition.center) {
-              offSetPosition = offSetPosition.copyWith(dx: (value.width) / -2);
-            }
-            //
-            //check if the overlay is out of the screen on y axis
-            if (offSetChild.dy + value.height > sizeScreen.height) {
-              offSetPosition = offSetPosition.copyWith(dy: -(value.height));
-            }
-            // check if the overlay is out of the screen on x axis
-            if (offSetChild.dx + value.width + 15 > sizeScreen.width) {
-              offSetPosition = offSetPosition.copyWith(dx: -(value.width));
-            }
-            return CompositedTransformFollower(
-              link: layerLink,
-              offset: offSetPosition,
-              child: child,
-            );
-          },
-          //the animate fade is used to do the trick of the overlay to not see the
-          //change of position when the widget is off screen, widget.message size is calculated in the builder
-          child: FadeContainer(
-            duration: widget.animation,
-            child: Container(
-              decoration: widget.decoration ?? theme.tooltipTheme.decoration,
-              child: Material(
-                textStyle: widget.textStyle ?? theme.tooltipTheme.textStyle,
-                color: Colors.transparent,
-                child: WidgetSize(
-                    onChange: (value) {
-                      overlaySize.value = value;
-                    },
-                    child: overlayWidget),
+      var offSetPosition = Offset(size.width, size.height);
+      var sizeScreen = MediaQuery.of(context).size;
+
+      Widget overlayWidget = buildOverlay();
+      ValueNotifier<Size> overlaySize = ValueNotifier<Size>(Size.zero);
+      ThemeData theme = Theme.of(context);
+
+      entry = OverlayEntry(
+        builder: (context) => Positioned(
+          right: offSetChild.dx,
+          child: ValueListenableBuilder(
+            valueListenable: overlaySize,
+            builder: (context, value, child) {
+              // Recalcular posição
+              var offset = offSetPosition;
+
+              if (widget.horizontalPosition == ExtendedTooltipPosition.left) {
+                offset = offset.copyWith(dx: -(value.width));
+              } else if (widget.horizontalPosition ==
+                  ExtendedTooltipPosition.center) {
+                offset = offset.copyWith(dx: (value.width) / -2);
+              }
+
+              if (offSetChild.dy + value.height > sizeScreen.height) {
+                offset = offset.copyWith(dy: -(value.height));
+              }
+
+              if (offSetChild.dx + value.width + 15 > sizeScreen.width) {
+                offset = offset.copyWith(dx: -(value.width));
+              }
+
+              return CompositedTransformFollower(
+                link: layerLink,
+                offset: offset,
+                showWhenUnlinked:
+                    false, // Importante: não mostrar quando não linkado
+                child: child,
+              );
+            },
+            child: FadeContainer(
+              duration: widget.animation,
+              child: Container(
+                decoration: widget.decoration ?? theme.tooltipTheme.decoration,
+                child: Material(
+                  textStyle: widget.textStyle ?? theme.tooltipTheme.textStyle,
+                  color: Colors.transparent,
+                  child: WidgetSize(
+                      onChange: (value) {
+                        overlaySize.value = value;
+                      },
+                      child: overlayWidget),
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-    overlay.insert(entry!);
+      );
+
+      overlay.insert(entry!);
+    } catch (e) {
+      // Silenciosamente falhar se houver problema de lifecycle
+      entry = null;
+    }
   }
 
   hideOverlay() {
@@ -192,19 +208,20 @@ class _ExtendedToolTipState extends State<ExtendedToolTip> {
   }
 
   Widget buildOverlay() {
-    // if the user don't want to keep the tooltip and interact with the widget, return the widget.message
     if (widget.keepTooltipWhenMouseHover == false) return widget.message;
-    //use the MouseRegion to check if the mouse pointer is over the tooltip
+
     return MouseRegion(
       child: widget.message,
       onEnter: (details) {
         isMouseOverMessage = true;
       },
       onExit: (details) async {
+        if (!mounted) return;
         isMouseOverMessage = false;
         await Future.delayed(const Duration(milliseconds: 100)).then((value) {
+          if (!mounted) return;
           if (isMouseOverMessage) return;
-          if (!isMouseOverMessage) hideOverlay();
+          hideOverlay();
         });
       },
     );
