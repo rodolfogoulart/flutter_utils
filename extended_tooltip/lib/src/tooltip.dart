@@ -1,4 +1,3 @@
-import 'package:extended_tooltip/src/utils/extensions.dart';
 import 'package:extended_tooltip/src/utils/fade_container.dart';
 import 'package:extended_tooltip/src/utils/widget_size.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +35,6 @@ class ExtendedToolTip extends StatefulWidget {
 
 class _ExtendedToolTipState extends State<ExtendedToolTip>
     with WidgetsBindingObserver {
-  final layerLink = LayerLink();
   bool isMouseOverMessage = false;
   OverlayEntry? entry;
 
@@ -84,20 +82,18 @@ class _ExtendedToolTipState extends State<ExtendedToolTip>
             isMouseOverMessage = true;
           }
         },
-        child: CompositedTransformTarget(
-            link: layerLink,
-            child: TapRegion(
-                onTapOutside: (event) async {
-                  if (!mounted) return;
-                  isMouseOverMessage = false;
-                  await Future.delayed(const Duration(milliseconds: 100))
-                      .then((value) {
-                    if (!mounted) return;
-                    if (isMouseOverMessage) return;
-                    hideOverlay();
-                  });
-                },
-                child: widget.child)),
+        child: TapRegion(
+            onTapOutside: (event) async {
+              if (!mounted) return;
+              isMouseOverMessage = false;
+              await Future.delayed(const Duration(milliseconds: 100))
+                  .then((value) {
+                if (!mounted) return;
+                if (isMouseOverMessage) return;
+                hideOverlay();
+              });
+            },
+            child: widget.child),
       );
     } else {
       return MouseRegion(
@@ -115,7 +111,7 @@ class _ExtendedToolTipState extends State<ExtendedToolTip>
             hideOverlay();
           });
         },
-        child: CompositedTransformTarget(link: layerLink, child: widget.child),
+        child: widget.child,
       );
     }
   }
@@ -137,7 +133,6 @@ class _ExtendedToolTipState extends State<ExtendedToolTip>
       final size = renderBox.size;
       final offSetChild = renderBox.localToGlobal(Offset.zero);
 
-      var offSetPosition = Offset(size.width, size.height);
       var sizeScreen = MediaQuery.of(context).size;
 
       Widget overlayWidget = buildOverlay();
@@ -145,50 +140,52 @@ class _ExtendedToolTipState extends State<ExtendedToolTip>
       ThemeData theme = Theme.of(context);
 
       entry = OverlayEntry(
-        builder: (context) => Positioned(
-          right: offSetChild.dx,
-          child: ValueListenableBuilder(
-            valueListenable: overlaySize,
-            builder: (context, value, child) {
-              // Recalcular posição
-              var offset = offSetPosition;
+        builder: (context) => ValueListenableBuilder(
+          valueListenable: overlaySize,
+          builder: (context, value, child) {
+            // Calcular posição baseada no tamanho do overlay
+            double left = offSetChild.dx + size.width;
+            double top = offSetChild.dy;
 
-              if (widget.horizontalPosition == ExtendedTooltipPosition.left) {
-                offset = offset.copyWith(dx: -(value.width));
-              } else if (widget.horizontalPosition ==
-                  ExtendedTooltipPosition.center) {
-                offset = offset.copyWith(dx: (value.width) / -2);
-              }
+            // Ajustar posição horizontal baseado em horizontalPosition
+            if (widget.horizontalPosition == ExtendedTooltipPosition.left) {
+              left = offSetChild.dx - value.width;
+            } else if (widget.horizontalPosition ==
+                ExtendedTooltipPosition.center) {
+              left = offSetChild.dx + (size.width - value.width) / 2;
+            }
 
-              if (offSetChild.dy + value.height > sizeScreen.height) {
-                offset = offset.copyWith(dy: -(value.height));
-              }
+            // Ajustar se está saindo da tela no eixo Y
+            if (top + value.height > sizeScreen.height) {
+              top = offSetChild.dy + size.height - value.height;
+            }
 
-              if (offSetChild.dx + value.width + 15 > sizeScreen.width) {
-                offset = offset.copyWith(dx: -(value.width));
-              }
+            // Ajustar se está saindo da tela no eixo X
+            if (left + value.width > sizeScreen.width) {
+              left = offSetChild.dx - value.width;
+            }
+            if (left < 0) {
+              left = 15;
+            }
 
-              return CompositedTransformFollower(
-                link: layerLink,
-                offset: offset,
-                showWhenUnlinked:
-                    false, // Importante: não mostrar quando não linkado
-                child: child,
-              );
-            },
-            child: FadeContainer(
-              duration: widget.animation,
-              child: Container(
-                decoration: widget.decoration ?? theme.tooltipTheme.decoration,
-                child: Material(
-                  textStyle: widget.textStyle ?? theme.tooltipTheme.textStyle,
-                  color: Colors.transparent,
-                  child: WidgetSize(
-                      onChange: (value) {
-                        overlaySize.value = value;
-                      },
-                      child: overlayWidget),
-                ),
+            return Positioned(
+              left: left,
+              top: top,
+              child: child!,
+            );
+          },
+          child: FadeContainer(
+            duration: widget.animation,
+            child: Container(
+              decoration: widget.decoration ?? theme.tooltipTheme.decoration,
+              child: Material(
+                textStyle: widget.textStyle ?? theme.tooltipTheme.textStyle,
+                color: Colors.transparent,
+                child: WidgetSize(
+                    onChange: (value) {
+                      overlaySize.value = value;
+                    },
+                    child: overlayWidget),
               ),
             ),
           ),
